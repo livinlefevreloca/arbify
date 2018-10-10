@@ -4,10 +4,10 @@ import datetime
 import logging
 
 
-from utils.bs4_utils import make_soup
-from utils. wrappers import saftey_net
-from scrapers.base_scraper import OddScraper
-from selenium.common.exceptions import NoSuchElementException
+from utils import make_soup
+from utils import safety_net
+from base_scraper import OddScraper
+
 
 
 logging.basicConfig(level="INFO")
@@ -36,7 +36,7 @@ class InteropScraper(OddScraper):
         time.sleep(2)
         return driver.find_element_by_id("competition-view-content").get_attribute("innerHTML")
 
-    @saftey_net
+    @safety_net
     def make_event_id(self, team1, team2, event_date):
         date_string = event_date.strftime("%Y-%m-%d")
         full = " ".join((team1, team2, date_string))
@@ -44,17 +44,17 @@ class InteropScraper(OddScraper):
         hasher.update(full.encode())
         return hasher.hexdigest()
 
-    @saftey_net
+    @safety_net
     def get_event_team(self, event):
         return (event.find("div", {"class": "ustop"}), event.find("div", {"class": "usbot"}))
 
-    @saftey_net
+    @safety_net
     def get_event_date(self, event):
         date_string = event.find("span", {"class": "eventdatetime"}).get("title")
         date_string = date_string[:date_string.index('<')]
         return datetime.datetime.strptime(date_string, "%m/%d/%Y")
 
-    @saftey_net
+    @safety_net
     def get_spread(self, column):
 
         spreads = []
@@ -64,7 +64,7 @@ class InteropScraper(OddScraper):
             spreads.append(data)
         return tuple(spreads)
 
-    @saftey_net
+    @safety_net
     def get_total(self, column):
         totals = []
         for item in column.find_all("a"):
@@ -73,7 +73,7 @@ class InteropScraper(OddScraper):
             totals.append(data)
         return tuple(totals)
 
-    @saftey_net
+    @safety_net
     def get_money_line(self, column):
         lines = []
         for item in column.find_all("a"):
