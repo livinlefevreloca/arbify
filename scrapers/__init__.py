@@ -1,5 +1,5 @@
-from interops import InteropScraper
+from bovada import BovadaScraper
 
 
-scraper = InteropScraper("https://sports.intertops.eu")
-scraper.get_NCAAF_lines()
+scraper = BovadaScraper("https://www.bovada.lv", "ncaaf", "bovada", sel=True)
+print(scraper._get_NCAAF_lines())
