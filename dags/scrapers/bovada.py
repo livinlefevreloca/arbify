@@ -30,11 +30,17 @@ class BovadaScraper(OddScraper):
 
     def _navigate_to_NCAAF(self):
         """
-        navigate the selenium driver to the correct url
+        navigate the selenium driver to the ncaaf url
         """
         self.driver.get(os.path.join(self.url, self.path))
 
-    def _get_markup_ncaaf(self):
+    def _navigate_to_NBA(self):
+        """
+        navigate the selenium driver to the nba url
+        """
+        self.driver.get(os.path.join(self.url, self.path))
+
+    def _get_markup(self):
         """
         retrieve the html to extract the lines info from
 
@@ -44,7 +50,7 @@ class BovadaScraper(OddScraper):
         return make_soup(data.get_attribute("innerHTML"))
 
 
-    def _get_data_ncaaf(self, markup, header):
+    def _get_data(self, markup, header):
         """
         retrieve all the needed data from the html table
         :params
@@ -56,15 +62,15 @@ class BovadaScraper(OddScraper):
         events = markup.find_all("section", {"class": "more-info"})
         content = {column: list() for column in header}
         for event in events:
-            content["Date"].append(self._parse_for_dates_ncaaf(event))
-            content["Teams"].append(self._parse_for_teams_ncaaf(event))
-            spread, mline, ou = self._parse_for_all_lines_ncaaf(event)
-            content["Spread"].append(self._parse_for_spread_ncaaf(spread))
-            content["Money Line"].append(self._parse_for_moneyline_ncaaf(mline))
-            content["Total Points"].append(self._parse_for_OU_ncaaf(ou))
+            content["Date"].append(self._parse_for_dates(event))
+            content["Teams"].append(self._parse_for_teams(event))
+            spread, mline, ou = self._parse_for_all_lines(event)
+            content["Spread"].append(self._parse_for_spread(spread))
+            content["Money Line"].append(self._parse_for_moneyline(mline))
+            content["Total Points"].append(self._parse_for_OU(ou))
         return content
 
-    def _parse_for_dates_ncaaf(self, event):
+    def _parse_for_dates(self, event):
         """
         parse for the date of a game from a subset of the html
         :params
@@ -73,9 +79,11 @@ class BovadaScraper(OddScraper):
         """
         span = event.find("span", {"class": "period hidden-xs"})
         date_str = " ".join(span.text.split())
+        if "Q" in date_str:
+            return datetime.now()
         return datetime.strptime(date_str, "%m/%d/%y %I:%M %p")
 
-    def _parse_for_teams_ncaaf(self, event):
+    def _parse_for_teams(self, event):
         """
         parse for a set of teams for a single game from a subset of the html
         :params
@@ -85,7 +93,7 @@ class BovadaScraper(OddScraper):
         anchor = event.find("a", {"class": "game-view-cta"})
         return tuple(re.sub(ranking_regex, "", team.text.strip()).strip() for team in anchor.find_all("h4"))
 
-    def _parse_for_all_lines_ncaaf(self, event):
+    def _parse_for_all_lines(self, event):
         """
         retrieve the containers for all of the lines we intend to retrieve
         :params
@@ -95,7 +103,7 @@ class BovadaScraper(OddScraper):
         container = event.find("sp-outcomes", {"class": "markets-container"})
         return tuple(item for item in container.find_all("sp-two-way-vertical", {"class": "market-type"}))
 
-    def _parse_for_spread_ncaaf(self, line):
+    def _parse_for_spread(self, line):
         """
         retrieve the spread for a single
         :params
@@ -107,7 +115,7 @@ class BovadaScraper(OddScraper):
         price = [re.search(price_re, price).group(0) for price in prices]
         return tuple(" ".join(item) for item in zip(handicap, price))
 
-    def _parse_for_moneyline_ncaaf(self, line):
+    def _parse_for_moneyline(self, line):
         """
         retrieve the moneylines for a single
         :params
@@ -117,7 +125,7 @@ class BovadaScraper(OddScraper):
         prices = [item.text for item in line.find_all("span", {"class": "bet-price"})]
         return tuple(re.search(price_re, price).group(0) for price in prices)
 
-    def _parse_for_OU_ncaaf(self, line):
+    def _parse_for_OU(self, line):
         """
         retrieve the over under for a single
         :params

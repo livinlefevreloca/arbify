@@ -28,12 +28,18 @@ class InteropScraper(OddScraper):
 
     def _navigate_to_NCAAF(self):
         """
-        navigate the selenium driver to the correct url
+        navigate the selenium driver to the NCAAF url
+        """
+        self.driver.get(os.path.join(self.url, self.path))
+
+    def _navigate_to_NBA(self):
+        """
+        navigate the selenium driver to the NBA url
         """
         self.driver.get(os.path.join(self.url, self.path))
 
 
-    def _get_markup_ncaaf(self):
+    def _get_markup(self):
         """
         retrieve the html to extract the lines info from
 
@@ -43,7 +49,7 @@ class InteropScraper(OddScraper):
         data = self.driver.find_element_by_class_name("markettable").get_attribute("innerHTML")
         return make_soup(data)
 
-    def _get_data_ncaaf(self, markup, header):
+    def _get_data(self, markup, header):
         """
         retrieve all the needed data from the html table
         :params
@@ -59,17 +65,17 @@ class InteropScraper(OddScraper):
             i +=1
             try:
                 odds = event.find_all("div", {"class": "td"})
-                content["Teams"].append(self._parse_for_teams_ncaaf(event))
-                content["Date"].append(self._parse_for_dates_ncaaf(event))
-                content["Spread"].append(self._parse_for_spread_ncaaf(odds[0]))
-                content["Total Points"].append(self._parse_for_OU_ncaaf(odds[1]))
-                content["Money Line"].append(self._parse_for_moneyline_ncaaf(odds[2]))
+                content["Teams"].append(self._parse_for_teams(event))
+                content["Date"].append(self._parse_for_dates(event))
+                content["Spread"].append(self._parse_for_spread(odds[0]))
+                content["Total Points"].append(self._parse_for_OU(odds[1]))
+                content["Money Line"].append(self._parse_for_moneyline(odds[2]))
             except Exception as e:
                 logging.exception(e)
                 continue
         return content
 
-    def _parse_for_teams_ncaaf(self, event):
+    def _parse_for_teams(self, event):
         """
         parse for a set of teams for a single game from a subset of the html
         :params
@@ -80,7 +86,7 @@ class InteropScraper(OddScraper):
                 re.sub(ranking_regex, "", event.find("div", {"class": "usbot"}).text.strip()).strip())
 
 
-    def _parse_for_dates_ncaaf(self, event):
+    def _parse_for_dates(self, event):
         """
         parse for the date of a game from a subset of the html
         :params
@@ -92,7 +98,7 @@ class InteropScraper(OddScraper):
         return datetime.strptime(date_string, "%m/%d/%Y %I:%M %p")
 
 
-    def _parse_for_spread_ncaaf(self, column):
+    def _parse_for_spread(self, column):
         """
         parse for the spread of a game from a subset of html
         :params
@@ -107,7 +113,7 @@ class InteropScraper(OddScraper):
         return tuple(spreads)
 
 
-    def _parse_for_OU_ncaaf(self, column):
+    def _parse_for_OU(self, column):
         """
         parse for the over under of a game from a subset of html
         :params
@@ -122,7 +128,7 @@ class InteropScraper(OddScraper):
         return tuple(totals)
 
 
-    def _parse_for_moneyline_ncaaf(self, column):
+    def _parse_for_moneyline(self, column):
         """
         parse for the moeny line of a game from a subset of html
         :params

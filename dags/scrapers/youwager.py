@@ -25,7 +25,7 @@ class YouWagerScraper(OddScraper):
         """
         site = "youwager"
         super().__init__(sport, site, sel=sel)
-        self._ncaaf_odds = None
+
 
     def _navigate_to_NCAAF(self):
         """
@@ -49,7 +49,51 @@ class YouWagerScraper(OddScraper):
         except Exception as e:
             logging.exception(e)
 
-    def _get_markup_ncaaf(self):
+    def _navigate_to_NCAAM(self):
+        """
+        navigate the selenium driver to the correct page
+        log exception on failure
+        """
+        try:
+            self.driver.get(os.path.join(self.url, self.path))
+            self.driver.maximize_window()
+            sleep(randrange(1,3))
+            sports_ul = self.driver.find_element_by_class_name("side-navbar-nav")
+            for li in sports_ul.find_elements_by_tag_name("li"):
+                if "Basketball" in li.get_attribute("innerHTML"):
+                    li.find_element_by_tag_name("a").click()
+            sleep(1)
+            league_ul = self.driver.find_element_by_class_name("leagues-list")
+            for li in league_ul.find_elements_by_tag_name("li"):
+                if "College" in li.get_attribute("innerHTML"):
+                    li.find_element_by_tag_name("a").click()
+                    break
+        except Exception as e:
+            logging.exception(e)
+
+    def _navigate_to_NBA(self):
+        """
+        navigate the selenium driver to the correct page
+        log exception on failure
+        """
+        try:
+            self.driver.get(os.path.join(self.url, self.path))
+            self.driver.maximize_window()
+            sleep(randrange(1,3))
+            sports_ul = self.driver.find_element_by_class_name("side-navbar-nav")
+            for li in sports_ul.find_elements_by_tag_name("li"):
+                if "Basketball" in li.get_attribute("innerHTML"):
+                    li.find_element_by_tag_name("a").click()
+            sleep(1)
+            league_ul = self.driver.find_element_by_class_name("leagues-list")
+            for li in league_ul.find_elements_by_tag_name("li"):
+                if "NBA" in li.get_attribute("innerHTML"):
+                    li.find_element_by_tag_name("a").click()
+                    break
+        except Exception as e:
+            logging.exception(e)
+
+    def _get_markup(self):
         """
         retrieve the html to extract the lines info from
 
@@ -59,7 +103,7 @@ class YouWagerScraper(OddScraper):
         return make_soup(data.get_attribute("innerHTML"))
 
 
-    def _get_data_ncaaf(self, markup, header):
+    def _get_data(self, markup, header):
         """
         retrieve all the needed data from the html table
         :params
@@ -71,15 +115,16 @@ class YouWagerScraper(OddScraper):
         events = markup.find_all("div", {"class": "game"})
         content = {column: list() for column in header}
         for event in events:
-            content["Date"].append(self._parse_for_dates_ncaaf(event))
-            content["Teams"].append(self._parse_for_teams_ncaaf(event))
-            spread, mline, ou  = self._parse_for_all_lines_ncaaf(event)
+            content["Date"].append(self._parse_for_dates(event))
+            content["Teams"].append(self._parse_for_teams(event))
+            spread, mline, ou  = self._parse_for_all_lines(event)
             content["Spread"].append(spread)
             content["Money Line"].append(mline)
             content["Total Points"].append(ou)
         return content
 
-    def _parse_for_all_lines_ncaaf(self, event):
+
+    def _parse_for_all_lines(self, event):
         """
         parse for all of the lines within the html
         :params
@@ -122,7 +167,7 @@ class YouWagerScraper(OddScraper):
                 spread = line
         return (spread, mline, ou)
 
-    def _parse_for_dates_ncaaf(self, event):
+    def _parse_for_dates(self, event):
         """
         parse for the date of a given game
         :params
@@ -132,7 +177,7 @@ class YouWagerScraper(OddScraper):
         date_str = event.find("div", {"class": "date strong"}).find("p").text
         return datetime.strptime(date_str, "%b %a %d, %Y %I:%M %p")
 
-    def _parse_for_teams_ncaaf(self, event):
+    def _parse_for_teams(self, event):
         """
         parse for the teams of a given game
         :params

@@ -45,7 +45,25 @@ class BetOnlineScraper(OddScraper):
                 break
         self.driver.find_element_by_id("viewSelectedId").click()
 
-    def _get_markup_ncaaf(self):
+    def _navigate_to_NBA(self):
+        """
+        navigate the selenium driver to the correct url
+        """
+        self.driver.get(os.path.join(self.url, self.path))
+        navs = self.driver.find_elements_by_class_name("topNav")
+        for nav in navs:
+            if "Basketball" in nav.get_attribute("innerHTML"):
+                if 'expanded' not in nav.find_element_by_tag_name('a').get_attribute('class'):
+                    nav.click()
+        subnavs = self.driver.find_elements_by_class_name("subNav")
+
+        for nav in subnavs:
+            if "NBA" in nav.get_attribute("innerHTML"):
+                nav.find_element_by_tag_name("input").click()
+                break
+        self.driver.find_element_by_id("viewSelectedId").click()
+
+    def _get_markup(self):
         """
         retrieve the html to extract the lines info from
 
@@ -55,7 +73,7 @@ class BetOnlineScraper(OddScraper):
 
 
 
-    def _get_data_ncaaf(self, markup, header):
+    def _get_data(self, markup, header):
         """
         retrieve the needed data from the markup. moves through the table and
         keeps track of the section it is in to know the date the came takes place
@@ -70,19 +88,19 @@ class BetOnlineScraper(OddScraper):
         content = {column: list() for column in header}
         date_string = ""
         for event in events:
-            date = self._parse_for_dates_ncaaf(event, date_string)
+            date = self._parse_for_dates(event, date_string)
             if not isinstance(date, datetime):
                 date_string = date
                 continue
             else:
                 content["Date"].append(date)
-            content["Teams"].append(self._parse_for_teams_ncaaf(event))
-            content["Spread"].append(self._parse_for_spread_ncaaf(event))
-            content["Money Line"].append(self._parse_for_moneyline_ncaaf(event))
-            content["Total Points"].append(self._parse_for_OU_ncaaf(event))
+            content["Teams"].append(self._parse_for_teams(event))
+            content["Spread"].append(self._parse_for_spread(event))
+            content["Money Line"].append(self._parse_for_moneyline(event))
+            content["Total Points"].append(self._parse_for_OU(event))
         return content
 
-    def _parse_for_dates_ncaaf(self, event, date_str):
+    def _parse_for_dates(self, event, date_str):
         """
         parse for the date of a specfic game. retrieves the time and adds
         it to the current date_str passed in as a param from the parent function
@@ -99,7 +117,7 @@ class BetOnlineScraper(OddScraper):
         timestamp = row.find("td", {"class": "col_time"}).text
         return datetime.strptime(date_str + timestamp, "%Y%m%d%I:%M %p")
 
-    def _parse_for_teams_ncaaf(self, event):
+    def _parse_for_teams(self, event):
         """
         retreive the teams for a single game
         :params
@@ -107,7 +125,7 @@ class BetOnlineScraper(OddScraper):
         """
         return tuple(re.sub(ranking_regex, "", team.text.strip()).strip() for team in event.find_all("td", {"class": "col_teamname"}))
 
-    def _parse_for_spread_ncaaf(self, event):
+    def _parse_for_spread(self, event):
         """
         parse for the spreads for a single game
         :params
@@ -122,7 +140,7 @@ class BetOnlineScraper(OddScraper):
             spreads.append(" ".join((handicap.text, price.text)))
         return tuple(spreads)
 
-    def _parse_for_moneyline_ncaaf(self, event):
+    def _parse_for_moneyline(self, event):
         """
         parse for the money line for a single game
         :params
@@ -131,7 +149,7 @@ class BetOnlineScraper(OddScraper):
         """
         return tuple(mline.text for mline in event.find_all("td", {"class": "moneylineodds"}))
 
-    def _parse_for_OU_ncaaf(self, event):
+    def _parse_for_OU(self, event):
         """
         parse for the over unders for a single game
         :params

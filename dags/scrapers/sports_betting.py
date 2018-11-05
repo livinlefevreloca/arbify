@@ -4,7 +4,7 @@ import os
 import re
 
 from datetime import datetime
-from utils import make_soup
+from utils import make_soup, remove_chars_from_date
 from scrapers.base_scraper import OddScraper
 
 ranking_regex = re.compile('\(#\d+\)') #regex to remove rankings in the team names
@@ -41,7 +41,26 @@ class SportsBettingScraper(OddScraper):
                 break
         self.driver.find_element_by_id("viewSelectedId").click()
 
-    def _get_markup_ncaaf(self):
+    def _navigate_to_NBA(self):
+        """
+        navigate the selenium driver to the correct page
+        log exception on failure
+        """
+        self.driver.get(os.path.join(self.url, self.path))
+        navs = self.driver.find_elements_by_class_name("topNav")
+        for nav in navs:
+            if "Basketball" in nav.get_attribute("innerHTML"):
+                if 'expanded' not in nav.find_element_by_tag_name('a').get_attribute('class'):
+                    nav.click()
+        subnavs = self.driver.find_elements_by_class_name("subNav")
+
+        for nav in subnavs:
+            if "NBA" in nav.get_attribute("innerHTML"):
+                nav.find_element_by_tag_name("input").click()
+                break
+        self.driver.find_element_by_id("viewSelectedId").click()
+
+    def _get_markup(self):
         """
         retrieve the html to extract the lines info from
 
@@ -50,7 +69,7 @@ class SportsBettingScraper(OddScraper):
         return make_soup(self.driver.find_element_by_class_name("league").get_attribute("innerHTML"))
 
 
-    def _get_data_ncaaf(self, markup, header):
+    def _get_data(self, markup, header):
         """
         retrieve the needed data from the markup. moves through the table and
         keeps track of the section it is in to know the date the came takes place
@@ -65,24 +84,22 @@ class SportsBettingScraper(OddScraper):
         content = {column: list() for column in header}
         date_string = ""
         for event in events:
-            date = self._parse_for_dates_ncaaf(event, date_string)
+            date = self._parse_for_dates(event, date_string)
             if not isinstance(date, datetime):
                 date_string = date
                 continue
             else:
                 content["Date"].append(date)
 
-            content["Teams"].append(self._parse_for_teams_ncaaf(event))
-
-            content["Money Line"].append(self._parse_for_moneyline_ncaaf(event))
-
-            spread, ou = self._parse_for_spread_and_OU_ncaaf(event)
+            content["Teams"].append(self._parse_for_teams(event))
+            content["Money Line"].append(self._parse_for_moneyline(event))
+            spread, ou = self._parse_for_spread_and_OU(event)
             content["Spread"].append(spread)
             content["Total Points"].append(ou)
 
         return content
 
-    def _parse_for_dates_ncaaf(self, event, date_string):
+    def _parse_for_dates(self, event, date_string):
         """
         parse for the date of a specfic game. retrieves the time and adds
         it to the current date_str passed in as a param from the parent function
@@ -92,8 +109,9 @@ class SportsBettingScraper(OddScraper):
             in the parent function
         return(datetime) -> a datetime object parsed from the date_string built.
         """
-        if "expanded" in event["class"]:
-            date_string = event["id"].split(" ")[0].replace("NCAA", "").replace('FCS', '')
+
+        if "date" in event["class"]:
+            date_string = remove_chars_from_date(replevent["id"].split(" ")[0])
             return date_string
         row = event.find("tr", {"class": "firstline"})
         timestamp = row.find("td", {"class": "col_time"}).text
@@ -101,7 +119,7 @@ class SportsBettingScraper(OddScraper):
 
 
 
-    def _parse_for_teams_ncaaf(self, event):
+    def _parse_for_teams(self, event):
         """
         retreive the teams for a single game
         :params
@@ -118,7 +136,7 @@ class SportsBettingScraper(OddScraper):
         return tuple(pair)
 
 
-    def _parse_for_spread_and_OU_ncaaf(self, event):
+    def _parse_for_spread_and_OU(self, event):
         """
         parse for both spread and over under for a single game
         :params
@@ -140,7 +158,8 @@ class SportsBettingScraper(OddScraper):
 
 
 
-    def _parse_for_moneyline_ncaaf(self, event):
+
+    def _parse_for_moneyline(self, event):
         """
         parse for the money line for a single game
         :params

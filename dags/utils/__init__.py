@@ -33,17 +33,6 @@ def make_truth(frames):
         truth[team2] = team1
     return truth
 
-base_urls = {"interops": "https://sports.intertops.eu",
-             "bovada": "https://www.bovada.lv",
-             "betonline": "https://www.betonline.ag",
-             "sportsbetting": "https://www.sportsbetting.ag",
-             "youwager": "https://www.youwager.eu"}
-
-paths  = {'ncaaf': {"interops": "en/Bets/Competition/1016",
-                   "sportsbetting": "sportsbook/football/ncaa",
-                   "youwager": "sportsbook",
-                   "betonline": "sportsbook",
-                   "bovada": "sports/football/college-football"}
-
-             }
-headers = {"ncaaf": ("Date", "Teams", "Spread", "Money Line", "Total Points") }
+def remove_chars_from_date(string):
+    string = string.replace('NBA', '')
+    string = string.replace('NCAA', '').replace('FCS', '')
