@@ -1,0 +1,27 @@
+version: '2.27'
+services:
+    arbify:
+        container_name: arbify
+        image: arbify
+        ports:
+          - "8000:8000"
+    postgres:
+        hostname: postgres
+        image: postgres:16.3
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=root
+        ports:
+            - "5432:5432"
+        shm_size: 1gb
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready"]
+          interval: 5s
+          timeout: 5s
+          retries: 10
+
+
+volumes:
+    postgres_data:

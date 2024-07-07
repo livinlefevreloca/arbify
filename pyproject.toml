@@ -10,6 +10,7 @@ python = "^3.9"
 
 # package dependencies
 requests = "^2.7.0"
+psycopg2 = "^2.9.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
