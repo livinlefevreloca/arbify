@@ -1,0 +1,25 @@
+FROM python:3.9
+
+# install poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.2.2 && \
+    cp /root/.local/bin/poetry /usr/local/bin/poetry && \
+    poetry --version && \
+    poetry config virtualenvs.create false
+
+RUN mkdir /app
+WORKDIR /app
+
+# copy poetry files into container
+COPY ["pyproject.toml", "/app/"]
+
+# install dependencies
+RUN poetry lock --no-update -vvv && \
+    poetry install
+
+# copy the rest of the files into container
+COPY arbify/ /app/
+COPY tests/ /app/tests/
+
+WORKDIR /
+# run the app
+CMD ["python", "app/"]

@@ -8,6 +8,12 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 
+# package dependencies
+requests = "^2.7.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+
 
 [build-system]
 requires = ["poetry-core"]
