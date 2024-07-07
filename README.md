@@ -1,2 +1,2 @@
 # ARBIFY
-A small tool for detecting arbitrafe across sports books
+A small tool for detecting arbitrage across sports books
